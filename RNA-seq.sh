@@ -1,9 +1,9 @@
 #!/bin/bash
 
-## Build index
-2bwt-builder process/Rm_rRNA/index/Human_rRNA_NCBI.fa && \
+## step1_Build_index
+bwt-builder process/Rm_rRNA/index/Human_rRNA_NCBI.fa && \
 
-## Rm rRNA
+## step2_Rm_rRNA
 soap_mm_gz -a SAMPLE1_R1.fq.gz -b SAMPLE_R2.fq.gz -D process/Rm_rRNA/index/Human_rRNA_NCBI.fa.index -m 0 -x 1000 -v 5 -r 2 -p 3 -o process/Rm_rRNA/SAMPLE_rRNA.PESoap.gz -2 process/Rm_rRNA/SAMPLE_rRNA.PESoapSingle.gz && \
 rRNAFilter.pl -fq SAMPLE1_R1.fq.gz,SAMPLE_R2.fq.gz -soap process/Rm_rRNA/SAMPLE_rRNA.PESoap.gz,process/Rm_rRNA/SAMPLE_rRNA.PESoapSingle.gz -output process/Rm_rRNA/SAMPLE_rRNAremoved && \
 fqcheck -r process/Rm_rRNA/SAMPLE_rRNAremoved_1.fq.gz -c process/Rm_rRNA/1.fqcheck && \
@@ -12,19 +12,19 @@ fqcheck_distribute.pl process/Rm_rRNA/1.fqcheck process/Rm_rRNA/2.fqcheck -o pro
 rm process/Rm_rRNA/SAMPLE_rRNA.PESoap.gz && \
 rm process/Rm_rRNA/SAMPLE_rRNA.PESoapSingle.gz  && \
 
-## Filter using SOAPnuke
+## step3_Filter
 tile=`perl findNtile2.pl -fq1 process/Rm_rRNA/SAMPLE_rRNAremoved_1.fq.gz -fq2 process/Rm_rRNA/SAMPLE_rRNAremoved_2.fq.gz  -seqType 0 ` && \
 SOAPnuke filter -l 5 -q 0.5 -n 0.05 -Q 1 -5 0  -c 1 -1 process/Rm_rRNA/SAMPLE_rRNAremoved_1.fq.gz -2 process/Rm_rRNA/SAMPLE_rRNAremoved_2.fq.gz -f AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -r AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA $tile -o process/Filter_SOAPnuke -C SAMPLE_1.fq.gz -D SAMPLE_2.fq.gz -R SAMPLE_1.rawdata.fq.gz -W SAMPLE_2.rawdata.fq.gz && \
 mv process/Filter_SOAPnuke/SAMPLE_1.fq.gz process/Filter_SOAPnuke/SAMPLE_2.fq.gz CleanData && ln -fs CleanData/SAMPLE_1.fq.gz process/Filter_SOAPnuke && ln -fs CleanData/SAMPLE_2.fq.gz process/Filter_SOAPnuke && \
 
-## Check Filter Stat
+## step4_Check_Filter_stat
 perl filter_stat.pl -indir process/Filter_SOAPnuke -output process/Filter_SOAPnuke/FilterSummary.xls && \
 cp process/Filter_SOAPnuke/FilterSummary.xls /Analysis_Report/CleanData && \
 cd CleanData/../ && \
 md5sum CleanData/*fq.gz > md5.txt && \
 
-## HISAT alignment
-export LD_LIBRARY_PATH=/Alignment/../software/RNA_lib:$LD_LIBRARY_PATH && \
+## step5_Genomapping
+# HISAT alignment
 cd process/GenomeMapping_HISAT/SAMPLE && \
 hisat2 --phred64 --sensitive --no-discordant --no-mixed -I 1 -X 1000 -x Database/hg19/GenomeHisat2Index/chrALL -1 CleanData/SAMPLE_1.fq.gz -2 CleanData/SAMPLE_2.fq.gz 2>SAMPLE.Map2GenomeStat.xls | samtools view -b -S -o SAMPLE.bam - && \
 
@@ -45,7 +45,8 @@ cp process/GenomeMapping_HISAT/GenomeMappingSummary.xls Analysis_Report/MapStat/
 cd IGV/bam/../../ && \
 md5sum IGV/bam/*bam >> md5.txt && \
 
-## build GeneExpression Index
+## step6_GeneExpression
+## build Index
 if [ ! -d process/GeneExp_RSEM/rsem-build ];then mkdir -p process/GeneExp_RSEM/rsem-build;fi && \
 cat Database/hg19/GeneBowtie2Index/refMrna.fa >process/GeneExp_RSEM/rsem-build/refMrna.fa && \
 cat Database/hg19/Annotation_kegg76/refMrna.fa.gene2mark >process/GeneExp_RSEM/gene2tr.txt && \
