@@ -47,16 +47,9 @@ REFERENCE_GENOME = Index_hg19_bowtie2
 GENOME_SIZE = chrom_hg19.sizes
 
 #######################################################################
-## Allele specific analysis
-#######################################################################
-
-ALLELE_SPECIFIC_SNP = 
-
-#######################################################################
 ## Capture Hi-C analysis
 #######################################################################
 
-CAPTURE_TARGET =
 REPORT_CAPTURE_REPORTER = 1
 
 #######################################################################
@@ -65,16 +58,11 @@ REPORT_CAPTURE_REPORTER = 1
 
 GENOME_FRAGMENT =  hg19_contig.MboI.txt 
 LIGATION_SITE = GATCGATC
-MIN_FRAG_SIZE = 
-MAX_FRAG_SIZE =
-MIN_INSERT_SIZE =
-MAX_INSERT_SIZE =
 
 #######################################################################
 ## Hi-C processing
 #######################################################################
 
-MIN_CIS_DIST =
 GET_ALL_INTERACTION_CLASSES = 1
 GET_PROCESS_SAM = 0
 RM_SINGLETON = 1
