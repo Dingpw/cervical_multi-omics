@@ -1,6 +1,6 @@
 # We used pipeline 
 CODE=/software/atac_dnase_pipelines
-DATA=/cervical/ATAC-SEQ/upload/Rawdata
+DATA=ATAC-SEQ_DATA_PATH
 WORK_ROOT=/cervical; SUFFIX=ATAC; WORK=$WORK_ROOT/$SUFFIX
 bds $CODE/atac.bds \
 -species hg19 -pe \
