@@ -9,13 +9,10 @@ rRNAFilter.pl -fq SAMPLE1_R1.fq.gz,SAMPLE_R2.fq.gz -soap process/Rm_rRNA/SAMPLE_
 fqcheck -r process/Rm_rRNA/SAMPLE_rRNAremoved_1.fq.gz -c process/Rm_rRNA/1.fqcheck && \
 fqcheck -r process/Rm_rRNA/SAMPLE_rRNAremoved_2.fq.gz -c process/Rm_rRNA/2.fqcheck && \
 fqcheck_distribute.pl process/Rm_rRNA/1.fqcheck process/Rm_rRNA/2.fqcheck -o process/Rm_rRNA/SAMPLE_rRNAremoved. && \
-rm process/Rm_rRNA/SAMPLE_rRNA.PESoap.gz && \
-rm process/Rm_rRNA/SAMPLE_rRNA.PESoapSingle.gz  && \
 
 ## step3_Filter
 tile=`perl findNtile2.pl -fq1 process/Rm_rRNA/SAMPLE_rRNAremoved_1.fq.gz -fq2 process/Rm_rRNA/SAMPLE_rRNAremoved_2.fq.gz  -seqType 0 ` && \
 SOAPnuke filter -l 5 -q 0.5 -n 0.05 -Q 1 -5 0  -c 1 -1 process/Rm_rRNA/SAMPLE_rRNAremoved_1.fq.gz -2 process/Rm_rRNA/SAMPLE_rRNAremoved_2.fq.gz -f AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC -r AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA $tile -o process/Filter_SOAPnuke -C SAMPLE_1.fq.gz -D SAMPLE_2.fq.gz -R SAMPLE_1.rawdata.fq.gz -W SAMPLE_2.rawdata.fq.gz && \
-mv process/Filter_SOAPnuke/SAMPLE_1.fq.gz process/Filter_SOAPnuke/SAMPLE_2.fq.gz CleanData && ln -fs CleanData/SAMPLE_1.fq.gz process/Filter_SOAPnuke && ln -fs CleanData/SAMPLE_2.fq.gz process/Filter_SOAPnuke && \
 
 ## step4_Genomapping
 # HISAT alignment
@@ -28,14 +25,9 @@ java -Xmx4G -Djava.io.tmpdir=java_tmp -jar picard.jar AddOrReplaceReadGroups I=S
 java -Xmx4G -Djava.io.tmpdir=java_tmp -jar picard.jar ReorderSam I=SAMPLE.AddRG.bam O=SAMPLE.AddRG.Reorder.bam R=Database/hg19/GenomeGatkIndex/chrALL.sort.fa VALIDATION_STRINGENCY=SILENT && \
 java -Xmx4G -Djava.io.tmpdir=java_tmp -jar picard.jar SortSam I=SAMPLE.AddRG.Reorder.bam O=SAMPLE.AddRG.Reorder.Sort.bam SO=coordinate VALIDATION_STRINGENCY=SILENT && \
 samtools index SAMPLE.AddRG.Reorder.Sort.bam && \
-mv SAMPLE.AddRG.Reorder.Sort.bam SAMPLE.AddRG.Reorder.Sort.bam.bai IGV/bam && \
-rm -rf java_tmp && \
-rm SAMPLE.bam SAMPLE.AddRG.bam SAMPLE.AddRG.Reorder.bam && \
-cp SAMPLE.Map2GenomeStat.xls Analysis_Report/MapStat/GenomeMapping  && \
-
 
 ## step5_GeneExpression
-## build Index
+# build Index
 if [ ! -d process/GeneExp_RSEM/rsem-build ];then mkdir -p process/GeneExp_RSEM/rsem-build;fi && \
 cat Database/hg19/GeneBowtie2Index/refMrna.fa >process/GeneExp_RSEM/rsem-build/refMrna.fa && \
 cat Database/hg19/Annotation_kegg76/refMrna.fa.gene2mark >process/GeneExp_RSEM/gene2tr.txt && \
@@ -44,7 +36,7 @@ rsem-prepare-reference process/GeneExp_RSEM/rsem-build/refMrna.fa process/GeneEx
 perl fastaDeal.pl -attr id:len process/GeneExp_RSEM/rsem-build/refMrna.fa >process/GeneExp_RSEM/TranscriptLength.txt && \
 awk '{print $1"\t1\t"$2}' process/GeneExp_RSEM/TranscriptLength.txt >process/GeneExp_RSEM/TranscriptLength.bed  && \
 
-## Gene Expression
+# Gene Expression
 export LD_LIBRARY_PATH=/GeneExp/../software/RNA_lib:$LD_LIBRARY_PATH && \
 bowtie2 -q --phred64 --sensitive --dpad 0 --gbar 99999999 --mp 1,1 --np 1 --score-min L,0,-0.1 -I 1 -X 1000 --no-mixed --no-discordant  -p 1 -k 200 -x process/GeneExp_RSEM/rsem-build/refMrna.fa -1 CleanData/SAMPLE_1.fq.gz -2 CleanData/SAMPLE_2.fq.gz 2>process/GeneExp_RSEM/SAMPLE.Map2GeneStat.xls | samtools view -S -b -o process/GeneExp_RSEM/SAMPLE.bam - && \
 rsem-calculate-expression --paired-end -p 8 --bam process/GeneExp_RSEM/SAMPLE.bam process/GeneExp_RSEM/rsem-build/refMrna.fa process/GeneExp_RSEM/SAMPLE && \
